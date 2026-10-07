@@ -1,113 +1,202 @@
 <title>Lotto-Labor</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: eine Spalte; Tippscheine im Raster, darunter Meine Tipps, Bilanz, Analyse */
+/* Layout: Ziehungsabend. Linksbündige Spalte auf nachtblauer Studiofläche mit Spotlight oben links:
+   Bühne mit der letzten Ziehung (Kugeln auf der Rinne) -> Tippscheine aus Papier im Raster ->
+   Meine Tipps -> Bilanz -> Analyse (Häufigkeit volle Breite, darunter Superzahl | Backtest). */
 :root {
-  --papier: #eef1ee;
-  --flaeche: #fbfcfb;
-  --tinte: #1b1f1d;
-  --leise: #59635d;
-  --linie: #cdd5cf;
-  --signal: #c8102e;
-  --signal-weich: #f7dfe3;
-  --gut: #1d7348;
-  --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  color-scheme: dark;
+  --nacht: #0a0d29;      /* Studiohintergrund */
+  --studio: #141945;     /* abgesetzte Flächen (gespeicherte Tipps) */
+  --rand: #2b3274;       /* Linien, Raster */
+  --elfenbein: #f3ecd8;  /* Text und Kugeln */
+  --leise: #aab0d8;      /* Nebentext */
+  --gold: #f2b950;       /* Akzent: Erwartungswert, Fokus */
+  --rot: #e8414d;        /* Superzahl, Warnung */
+  --rot-hell: #ffb3b8;
+  --gut: #78d9a4;        /* Gewinnklasse */
+  --papier: #f6eed8;     /* Tippschein */
+  --druck: #a3505d;      /* Aufdruck des Scheins */
+  --stift: #c3122d;      /* Kreuz mit dem Stift */
+  --tinte: #1f1b30;      /* Schrift auf Papier und Kugeln */
+  --font-display: "Bricolage Grotesque", "Arial Narrow", system-ui, sans-serif;
   --font-text: "Source Sans 3", system-ui, sans-serif;
   --font-zahl: "IBM Plex Mono", ui-monospace, monospace;
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --papier: #121514; --flaeche: #1b1f1d; --tinte: #e6ebe7; --leise: #9aa49e;
-    --linie: #313833; --signal: #ff5b6f; --signal-weich: #3a1d23; --gut: #5cc690;
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --papier: #121514; --flaeche: #1b1f1d; --tinte: #e6ebe7; --leise: #9aa49e;
-  --linie: #313833; --signal: #ff5b6f; --signal-weich: #3a1d23; --gut: #5cc690;
-  color-scheme: dark;
-}
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-body { background: var(--papier); color: var(--tinte); font-family: var(--font-text);
-  font-size: 16px; line-height: 1.5; }
-.seite { max-width: 1040px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 56px;
-  display: grid; gap: 44px; }
-h1, h2 { font-family: var(--font-display); font-weight: 700; line-height: 1.05;
-  text-wrap: balance; margin: 0; letter-spacing: 0.01em; }
-h1 { font-size: clamp(2.4rem, 7vw, 3.6rem); }
-h1 span { color: var(--signal); }
-h2 { font-size: 1.75rem; }
+body {
+  margin: 0; color: var(--elfenbein); font: 400 1rem/1.55 var(--font-text);
+  background-color: var(--nacht);
+  background-image:
+    radial-gradient(ellipse 760px 520px at 18% -120px, rgba(92, 108, 255, 0.30), rgba(92, 108, 255, 0) 70%),
+    radial-gradient(ellipse 420px 260px at 26% 260px, rgba(242, 185, 80, 0.07), rgba(242, 185, 80, 0) 70%);
+  background-repeat: no-repeat;
+}
+.seite { max-width: 1080px; margin: 0 auto; padding-inline: 16px; padding-block: 40px 80px;
+  display: grid; gap: 72px; }
+@media (min-width: 720px) { .seite { padding-inline: 32px; } }
+h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; }
+h1 { font-size: clamp(2.75rem, 9vw, 5rem); font-weight: 800; line-height: 0.95; letter-spacing: -0.03em; }
+h2 { font-size: clamp(1.75rem, 4.5vw, 2.5rem); font-weight: 700; line-height: 1.05; letter-spacing: -0.015em; }
+h3 { font-size: 1.25rem; font-weight: 600; line-height: 1.2; }
 p { margin: 0; max-width: 65ch; }
 .leise { color: var(--leise); }
-.etikett { font-family: var(--font-zahl); font-size: 0.75rem; text-transform: uppercase;
-  letter-spacing: 0.08em; color: var(--leise); }
-header { display: grid; gap: 10px; }
-.stand { font-family: var(--font-zahl); font-size: 0.85rem; color: var(--leise); }
-section { display: grid; gap: 16px; }
-.kopfzeile { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px; }
-button { font: 600 0.95rem var(--font-text); border-radius: 6px; cursor: pointer;
-  padding: 9px 16px; border: 1px solid var(--tinte); background: var(--tinte); color: var(--papier); }
-button.zweit { background: transparent; color: var(--tinte); border-color: var(--linie); }
-button.gefahr { background: transparent; color: var(--signal); border-color: var(--signal); }
-button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
-button:disabled { opacity: 0.5; cursor: default; }
-.scheine { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 16px; }
-.schein { background: var(--flaeche); border: 1px solid var(--linie); border-radius: 8px;
-  padding: 14px; display: grid; gap: 12px; }
-.feld { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+section { display: grid; gap: 20px; }
+section > * { min-width: 0; }
+.kopfzeile { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 24px; }
+:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+
+/* ---------- Kugeln ---------- */
+.kugeln { display: flex; gap: 6px; }
+.kugel {
+  width: var(--d, 44px); height: var(--d, 44px); flex: none; border-radius: 50%;
+  display: grid; place-items: center;
+  font: 800 calc(var(--d, 44px) * 0.44) / 1 var(--font-display);
+  font-variant-numeric: tabular-nums; letter-spacing: -0.03em; color: var(--tinte);
+  background: radial-gradient(circle at 34% 28%, #ffffff 0, #fffaf0 9%, #f3ecd8 32%, #d8c79c 72%, #978658 100%);
+  box-shadow: 0 calc(var(--d, 44px) * 0.14) calc(var(--d, 44px) * 0.24) -2px rgba(0, 0, 0, 0.6),
+    inset calc(var(--d, 44px) * -0.06) calc(var(--d, 44px) * -0.08) calc(var(--d, 44px) * 0.16) rgba(80, 60, 20, 0.28);
+}
+.kugel.sz {
+  color: #ffffff;
+  background: radial-gradient(circle at 34% 28%, #ffd8d4 0, #ff7d83 10%, #e8414d 36%, #a30d22 78%, #5c0512 100%);
+  box-shadow: 0 calc(var(--d, 44px) * 0.14) calc(var(--d, 44px) * 0.24) -2px rgba(0, 0, 0, 0.6),
+    0 0 calc(var(--d, 44px) * 0.6) rgba(232, 65, 77, 0.35);
+}
+.kugel.geist { background: none; box-shadow: none; border: 1.5px dashed rgba(243, 236, 216, 0.3); }
+.kugel.sz.geist { border-color: rgba(232, 65, 77, 0.55); }
+.kugel.daneben { opacity: 0.35; filter: saturate(0.3); }
+
+/* ---------- Bühne ---------- */
+.buehne { display: grid; gap: 36px; }
+.marke { display: grid; gap: 14px; }
+.kicker { font: 500 0.9375rem var(--font-zahl); color: var(--gold); }
+.intro { color: var(--leise); font-size: 1.125rem; max-width: 56ch; }
+.ziehung { display: grid; gap: 16px; justify-items: start; }
+.ziehung-titel { font: 600 1.25rem/1.2 var(--font-display); }
+.rinne { --d: clamp(38px, 10.5vw, 76px); position: relative; display: flex; align-items: flex-end;
+  gap: clamp(6px, 1.4vw, 14px); padding: 0 clamp(6px, 1.4vw, 14px) 12px; max-width: 100%; }
+.rinne::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 7px; border-radius: 4px;
+  background: linear-gradient(180deg, #2a3278, #0f1336); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1); }
+.sz-gruppe { display: grid; justify-items: center; gap: 4px; margin-left: clamp(4px, 2vw, 22px); }
+.sz-gruppe small { font: 500 0.75rem var(--font-zahl); color: var(--rot-hell); }
+.stand { font: 400 0.875rem var(--font-zahl); color: var(--leise); }
+
+/* ---------- Knöpfe & Hinweise ---------- */
+button { font: 600 1rem var(--font-text); border-radius: 999px; cursor: pointer; padding: 10px 22px;
+  border: 1.5px solid var(--elfenbein); background: var(--elfenbein); color: var(--tinte); }
+button:hover { background: #ffffff; border-color: #ffffff; }
+button.zweit { background: transparent; color: var(--elfenbein); border-color: var(--rand); }
+button.zweit:hover { border-color: var(--leise); }
+button.gefahr { background: transparent; color: var(--rot-hell); border-color: var(--rot); }
+button:disabled { opacity: 0.55; cursor: default; }
+.chance { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 28px; align-items: baseline; }
+.chance-zahl { font: 500 clamp(1.5rem, 4vw, 2rem) var(--font-zahl); color: var(--gold); white-space: nowrap; letter-spacing: -0.03em; }
+@media (max-width: 640px) { .chance { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------- Tippscheine ---------- */
+.scheine { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 186px), 1fr)); gap: 20px; }
+.schein {
+  container-type: inline-size; color-scheme: light; color: var(--tinte);
+  background-color: var(--papier);
+  background-image:
+    radial-gradient(circle at 18% 8%, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0) 45%),
+    radial-gradient(circle at 88% 92%, rgba(168, 136, 74, 0.16), rgba(168, 136, 74, 0) 55%),
+    repeating-linear-gradient(0deg, rgba(120, 90, 40, 0.035) 0 1px, rgba(0, 0, 0, 0) 1px 3px),
+    repeating-linear-gradient(90deg, rgba(120, 90, 40, 0.03) 0 1px, rgba(0, 0, 0, 0) 1px 4px);
+  border-radius: 3px; padding: 12px 14px 16px; display: grid; gap: 12px; align-content: start;
+  box-shadow: 0 22px 34px -20px rgba(0, 0, 0, 0.85), 0 2px 0 rgba(0, 0, 0, 0.3);
+}
+.schein :focus-visible { outline-color: var(--stift); }
+.schein-kopf { display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+  font: 700 0.875rem var(--font-display); color: var(--druck); border-bottom: 1.5px solid var(--druck); padding-bottom: 6px; }
+.schein-kopf span:last-child { font: 500 0.6875rem var(--font-zahl); }
+.kugeln.klein { --d: 22px; gap: 4px; justify-content: space-between;
+  overflow: hidden; padding-block: 2px 7px; }
+@supports (width: 1cqi) { .kugeln.klein { --d: min(30px, 14cqi); } }
+.feld { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
 .feld span { position: relative; aspect-ratio: 1; max-width: 100%; display: grid; place-items: center;
-  font: 500 0.7rem var(--font-zahl); color: var(--leise); border: 1px solid var(--linie); border-radius: 2px; }
-.feld span.an { color: var(--tinte); border-color: var(--signal); }
-.feld span.an::before, .feld span.an::after { content: ""; position: absolute; left: 12%; right: 12%;
-  top: 50%; height: 2px; background: var(--signal); }
-.feld span.an::before { transform: rotate(45deg); }
-.feld span.an::after { transform: rotate(-45deg); }
-.zahlen { font: 700 1.35rem var(--font-display); letter-spacing: 0.04em;
-  font-variant-numeric: tabular-nums; white-space: pre-wrap; }
-.speichern { display: grid; grid-template-columns: 1fr 64px; gap: 6px; }
+  font: 500 0.6875rem var(--font-zahl); color: var(--druck); border: 1px solid rgba(163, 80, 93, 0.45); border-radius: 2px; }
+.feld span.an { color: var(--tinte); }
+.feld svg { position: absolute; left: -14%; top: -14%; width: 128%; height: 128%; overflow: visible; pointer-events: none; }
+.feld path { fill: none; stroke: var(--stift); stroke-width: 2.3; stroke-linecap: round; }
+.speichern { display: grid; grid-template-columns: minmax(0, 1fr) 64px; gap: 8px;
+  border-top: 1px dashed rgba(163, 80, 93, 0.55); padding-top: 12px; }
 .speichern button { grid-column: 1 / -1; }
-label { display: grid; gap: 2px; font-size: 0.75rem; color: var(--leise); }
-input, select { font: 400 0.9rem var(--font-text); padding: 6px 8px; border-radius: 5px;
-  border: 1px solid var(--linie); background: var(--papier); color: var(--tinte); min-width: 0; }
-.hinweis-box { border-left: 3px solid var(--signal); padding: 4px 0 4px 14px; }
-.liste { display: grid; gap: 8px; }
-.tipp-zeile { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 16px; align-items: center;
-  background: var(--flaeche); border: 1px solid var(--linie); border-radius: 8px; padding: 12px 14px; }
-.tipp-zeile .zahlen { font-size: 1.15rem; }
-.tipp-zeile .zahlen b { color: var(--signal); }
-.chip { font: 500 0.75rem var(--font-zahl); padding: 3px 9px; border-radius: 99px; white-space: nowrap;
-  border: 1px solid var(--linie); color: var(--leise); }
+.schein label { display: grid; gap: 3px; font: 600 0.75rem var(--font-text); color: var(--druck); }
+.schein input, .schein select { width: 100%; min-width: 0; font: 400 0.9375rem var(--font-text); padding: 6px 8px;
+  border-radius: 3px; border: 1px solid rgba(31, 27, 48, 0.3); background: #fffdf6; color: var(--tinte); }
+.schein input { font: 700 1rem var(--font-display); color: var(--stift); }
+.schein button { padding: 8px 14px; font-size: 0.9375rem; }
+.schein button.zweit { background: transparent; color: var(--tinte); border-color: rgba(31, 27, 48, 0.4); }
+.schein button.zweit:hover { border-color: var(--tinte); background: rgba(255, 255, 255, 0.5); }
+
+/* ---------- Meine Tipps ---------- */
+.liste { display: grid; gap: 10px; }
+.tipp-zeile { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px 16px; align-items: center;
+  background: var(--studio); border: 1px solid var(--rand); border-radius: 12px; padding: 14px 16px; }
+.kugeln.mini { --d: 32px; flex-wrap: wrap; }
+.aktionen { display: flex; gap: 8px 10px; grid-column: 1 / -1; flex-wrap: wrap; align-items: center; }
+.aktionen .info { color: var(--leise); margin-right: auto; font-size: 0.9375rem; }
+.aktionen button { padding: 5px 14px; font-size: 0.875rem; }
+@media (max-width: 520px) { .tipp-zeile { grid-template-columns: minmax(0, 1fr); } .tipp-zeile .chip { justify-self: start; } }
+.chip { font: 500 0.8125rem var(--font-zahl); padding: 3px 10px; border-radius: 999px; white-space: nowrap;
+  border: 1px solid var(--rand); color: var(--leise); }
 .chip.gewinn { border-color: var(--gut); color: var(--gut); }
-.chip.signal { white-space: normal; border-color: var(--signal); color: var(--signal); background: var(--signal-weich); }
-.aktionen { display: flex; gap: 8px; grid-column: 1 / -1; flex-wrap: wrap; align-items: center; }
-.aktionen button { padding: 4px 10px; font-size: 0.8rem; }
-.leer { border: 1px dashed var(--linie); border-radius: 8px; padding: 18px; color: var(--leise); }
+.chip.signal { white-space: normal; border-color: var(--rot); color: var(--rot-hell); background: rgba(232, 65, 77, 0.14); }
+.leer { border: 1px dashed var(--rand); border-radius: 12px; padding: 18px 20px; color: var(--leise); max-width: 72ch; }
+
+/* ---------- Tabellen & Diagramme ---------- */
 .tabelle-huelle { overflow-x: auto; }
-table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; min-width: 520px; }
-th, td { text-align: right; padding: 8px 10px; border-bottom: 1px solid var(--linie); }
-th:first-child, td:first-child { text-align: left; }
-th { font: 500 0.75rem var(--font-zahl); text-transform: uppercase; letter-spacing: 0.06em; color: var(--leise); }
-td { font-family: var(--font-zahl); font-size: 0.9rem; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+#backtest { min-width: 480px; }
+th, td { text-align: right; padding: 9px 12px; border-bottom: 1px solid var(--rand); }
+th:first-child, td:first-child { text-align: left; padding-left: 0; }
+th { font: 600 0.8125rem var(--font-text); color: var(--leise); }
+td { font: 400 0.9375rem var(--font-zahl); }
 td:first-child { font-family: var(--font-text); }
-.diagramm { background: var(--flaeche); border: 1px solid var(--linie); border-radius: 8px; padding: 12px; }
+tr.erwartet td { color: var(--gold); border-bottom: none; }
+.analyse { gap: 40px; }
+.block { display: grid; gap: 14px; align-content: start; border-top: 1px solid var(--rand); padding-top: 20px; }
+.block > * { min-width: 0; }
+.diagramm { overflow-x: auto; }
 .diagramm svg { display: block; width: 100%; height: auto; }
-.zwei { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 24px; }
+#diagramm svg { min-width: 560px; }
+.zwei { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 40px 48px; }
 .zwei > * { min-width: 0; }
+
+/* ---------- Bewegung: nur beim Erzeugen neuer Tipps ---------- */
 @media (prefers-reduced-motion: no-preference) {
-  .schein { animation: rein 240ms ease-out both; }
-  @keyframes rein { from { transform: translateY(4px); } to { transform: none; } }
+  .ziehen .klein .kugel { animation: rollen 560ms cubic-bezier(0.2, 0.8, 0.25, 1) both; animation-delay: var(--v); }
+  @keyframes rollen {
+    from { transform: translateX(-140%) rotate(-280deg); opacity: 0; }
+    50% { opacity: 1; }
+    to { transform: none; opacity: 1; }
+  }
+  .ziehen .feld path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: strich 170ms ease-out forwards;
+    animation-delay: var(--v); }
+  .ziehen .feld path + path { animation-delay: calc(var(--v) + 160ms); }
+  @keyframes strich { to { stroke-dashoffset: 0; } }
+  .rinne.laedt .kugel.geist { animation: warten 1.6s ease-in-out infinite alternate; }
+  @keyframes warten { to { opacity: 0.35; } }
 }
 </style>
 
 <main class="seite">
-  <header>
-    <div class="etikett">Lotto 6 aus 49</div>
-    <h1>Lotto-<span>Labor</span></h1>
-    <p class="leise">Zufällige Tipps ohne beliebte Muster, deine gespielten Scheine mit Gewinncheck und ein Test, ob Muster die nächste Ziehung vorhersagen.</p>
-    <div class="stand" id="stand">Ziehungen werden geladen …</div>
+  <header class="buehne">
+    <div class="marke">
+      <div class="kicker">Lotto 6 aus 49</div>
+      <h1>Lotto-Labor</h1>
+      <p class="intro">Zufällige Tipps ohne beliebte Muster, deine gespielten Scheine mit Gewinncheck und ein Test, ob Muster die nächste Ziehung vorhersagen.</p>
+    </div>
+    <div class="ziehung">
+      <h2 class="ziehung-titel" id="ziehung-titel">Ziehungen werden geladen …</h2>
+      <div class="rinne" id="rinne"></div>
+      <div class="stand" id="stand">Datenstand wird geladen …</div>
+    </div>
   </header>
 
   <section aria-labelledby="t-tipps">
@@ -115,7 +204,10 @@ td:first-child { font-family: var(--font-text); }
       <h2 id="t-tipps">Smarte Tipps</h2>
       <button id="neu" type="button">5 neue Tipps</button>
     </div>
-    <p class="hinweis-box">Jeder Tipp hat dieselbe Chance von 1 : 139.838.160 auf den Jackpot. Diese Tipps meiden Geburtstage, Reihen auf dem Schein und die letzten Gewinnzahlen. So teilst du einen Gewinn wahrscheinlich mit weniger Leuten.</p>
+    <div class="chance">
+      <div class="chance-zahl">1 : 139.838.160</div>
+      <p class="leise">Diese Chance auf den Jackpot hat jeder Tipp, egal welche Zahlen du ankreuzt. Diese Tipps meiden Geburtstage, Reihen auf dem Schein und die letzten Gewinnzahlen. So teilst du einen Gewinn wahrscheinlich mit weniger Leuten.</p>
+    </div>
     <div class="scheine" id="scheine"></div>
   </section>
 
@@ -126,19 +218,27 @@ td:first-child { font-family: var(--font-text); }
 
   <section aria-labelledby="t-bilanz" id="bereich-bilanz">
     <h2 id="t-bilanz">Meine Bilanz</h2>
-    <div id="bilanz"></div>
+    <div class="liste" id="bilanz"></div>
   </section>
 
-  <section aria-labelledby="t-analyse">
-    <h2 id="t-analyse">Gibt es Muster?</h2>
+  <section aria-labelledby="t-analyse" class="analyse">
+    <div class="liste">
+      <h2 id="t-analyse">Gibt es Muster?</h2>
+      <p class="leise">Drei Prüfungen an allen Ziehungen: wie oft jede Zahl kam, wie oft jede Superzahl kam und ob Tipp-Strategien im Backtest öfter treffen als der Zufall.</p>
+    </div>
+    <div class="block">
+      <h3>Wie oft kam jede Zahl seit 1955</h3>
+      <div class="diagramm" id="diagramm"></div>
+      <p class="leise" id="diagramm-text"></p>
+    </div>
     <div class="zwei">
-      <div class="liste">
-        <div class="etikett">Wie oft kam jede Zahl seit 1955</div>
-        <div class="diagramm" id="diagramm"></div>
-        <p class="leise" id="diagramm-text"></p>
+      <div class="block">
+        <h3>Wie oft kam jede Superzahl</h3>
+        <div class="diagramm" id="sz-diagramm"></div>
+        <p class="leise" id="sz-text"></p>
       </div>
-      <div class="liste">
-        <div class="etikett" id="backtest-titel"></div>
+      <div class="block">
+        <h3 id="backtest-titel"></h3>
         <div class="tabelle-huelle"><table id="backtest"></table></div>
         <p id="backtest-fazit"></p>
       </div>
@@ -158,6 +258,13 @@ const Z = { jahre: new Map(), stand: null, standGeladen: false, tipps: [], vorsc
   ziehungenStatus: "laden", tippsFehler: false, loeschFehler: new Set(), nurLesen: false,
   eingabeBeruehrt: false, ersteLieferung: true, standFehler: false };
 const TEXT_NUR_LESEN = "Du hast nur Lesezugriff. Bitte den Besitzer um Mitwirkenden-Zugriff, um Tipps zu speichern.";
+const WOCHENTAGE = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
+// Handgezogene Kreuze (viewBox 0 0 20 20), drei Varianten, damit nicht jedes Kreuz gleich aussieht.
+const KREUZE = [
+  ["M3.6 4.4 C8 8.6 12 12.4 16.6 16.2", "M16.4 3.4 C12.6 8 8.2 12.2 3.8 16.8"],
+  ["M4.2 3.6 C8.4 8.2 11.6 12 16 16.8", "M15.8 4.2 C11.8 8.6 8.6 11.8 3.4 15.8"],
+  ["M3.2 5 C7.6 8.4 12.4 13 16.8 15.6", "M16.8 3.8 C13 7.6 7.6 12.6 4.4 16.4"],
+];
 
 const $ = (id) => document.getElementById(id);
 function el(tag, attrs, ...kinder) {
@@ -170,30 +277,83 @@ function el(tag, attrs, ...kinder) {
   for (const kind of kinder.flat()) if (kind != null) e.append(kind);
   return e;
 }
+const SVG_NS = "http://www.w3.org/2000/svg";
+function sv(tag, a, text) {
+  const e = document.createElementNS(SVG_NS, tag);
+  for (const [k, v] of Object.entries(a)) e.setAttribute(k, v);
+  if (text != null) e.textContent = text;
+  return e;
+}
 const fmtDatum = (iso) => { const [j, m, t] = iso.split("-"); return t + "." + m + "." + j; };
+const fmtZiehungstag = (iso) => WOCHENTAGE[new Date(iso + "T12:00:00Z").getUTCDay()] + ", " + fmtDatum(iso);
 const fmtZahl = (x, n = 0) => x.toLocaleString("de-DE", { minimumFractionDigits: n, maximumFractionDigits: n });
+const kugel = (n, extra) => el("span", { class: "kugel" + (extra ? " " + extra : "") }, n == null ? "" : String(n));
 
 function alleZiehungen() {
   return [...Z.jahre.values()].flat().sort((a, b) => (a.datum < b.datum ? -1 : 1));
 }
 function letzteZiehung() { const a = alleZiehungen(); return a.length ? a[a.length - 1] : null; }
+function statusText() {
+  return Z.ziehungenStatus === "fehlt" ? "Diagramm nicht verfügbar"
+    : Z.ziehungenStatus === "da" ? "Noch keine Ziehungsdaten vorhanden." : "Ziehungen werden geladen …";
+}
+
+/* ---------- Bühne: letzte Ziehung ---------- */
+function renderHero() {
+  const z = letzteZiehung();
+  const rinne = $("rinne");
+  if (!z) {
+    $("ziehung-titel").textContent = Z.ziehungenStatus === "fehlt" ? "Ziehungsdaten nicht verfügbar"
+      : Z.ziehungenStatus === "da" ? "Noch keine Ziehungsdaten vorhanden." : "Ziehungen werden geladen …";
+    rinne.className = "rinne" + (Z.ziehungenStatus === "laden" ? " laedt" : "");
+    rinne.setAttribute("aria-hidden", "true");
+    rinne.removeAttribute("role"); rinne.removeAttribute("aria-label");
+    rinne.replaceChildren(...Array.from({ length: 6 }, () => kugel(null, "geist")),
+      el("div", { class: "sz-gruppe" }, el("small", {}, "Superzahl"), kugel(null, "sz geist")));
+    return;
+  }
+  const zahlen = [...z.zahlen].sort((a, b) => a - b);
+  $("ziehung-titel").textContent = "Ziehung vom " + fmtZiehungstag(z.datum);
+  rinne.className = "rinne";
+  rinne.removeAttribute("aria-hidden");
+  rinne.setAttribute("role", "img");
+  rinne.setAttribute("aria-label", "Gewinnzahlen " + zahlen.join(", ") +
+    (z.superzahl != null ? ", Superzahl " + z.superzahl : ""));
+  rinne.replaceChildren(...zahlen.map((n) => kugel(n)),
+    z.superzahl != null ? el("div", { class: "sz-gruppe" }, el("small", {}, "Superzahl"), kugel(z.superzahl, "sz")) : null);
+}
 
 /* ---------- Tipps ---------- */
 function neueVorschlaege() {
   const letzte = letzteZiehung();
   Z.vorschlaege = Array.from({ length: 5 }, () => Lotto.smarterTipp(letzte ? letzte.zahlen : null));
-  renderVorschlaege();
+  renderVorschlaege(true);
 }
 
-function feld(tipp) {
+// Spielfeld 7×7; angekreuzte Felder bekommen ein Stiftkreuz, das nacheinander gezeichnet wird (--v = Verzögerung).
+function feld(tipp, start) {
   return el("div", { class: "feld", "aria-hidden": "true" },
-    Array.from({ length: 49 }, (_, i) => el("span", { class: tipp.includes(i + 1) ? "an" : "" }, String(i + 1))));
+    Array.from({ length: 49 }, (_, i) => {
+      const n = i + 1, k = tipp.indexOf(n);
+      if (k < 0) return el("span", {}, String(n));
+      const [a, b] = KREUZE[n % KREUZE.length];
+      const svg = sv("svg", { viewBox: "0 0 20 20", "aria-hidden": "true" });
+      svg.append(sv("path", { d: a, pathLength: 1 }), sv("path", { d: b, pathLength: 1 }));
+      return el("span", { class: "an", style: "--v: " + (start + 450 + k * 240) + "ms" }, String(n), svg);
+    }));
 }
 
-function renderVorschlaege() {
+function renderVorschlaege(animieren = false) {
   const tage = Lotto.naechsteZiehungstage(new Date(), 4, Lotto.annahmeschlussVorbei(new Date()));
+  $("scheine").className = "scheine" + (animieren ? " ziehen" : "");
   $("scheine").replaceChildren(...Z.vorschlaege.map((tipp, nr) => {
-    const kinder = [feld(tipp), el("div", { class: "zahlen" }, tipp.join("  "))];
+    const start = nr * 140;
+    const kinder = [
+      el("div", { class: "schein-kopf" }, el("span", {}, "Spielfeld " + (nr + 1)), el("span", {}, "6 aus 49")),
+      el("div", { class: "kugeln klein", role: "img", "aria-label": "Tipp " + (nr + 1) + ": " + tipp.join(", ") },
+        tipp.map((n, k) => el("span", { class: "kugel", style: "--v: " + (start + k * 70) + "ms" }, String(n)))),
+      feld(tipp, start),
+    ];
     if (Z.speichernMoeglich) {
       const datum = el("select", { id: "datum-" + nr, "aria-label": "Ziehung" },
         tage.map((t) => el("option", { value: t }, fmtDatum(t))));
@@ -208,7 +368,7 @@ function renderVorschlaege() {
         el("label", {}, "Superzahl", sz),
         knopf));
     }
-    return el("div", { class: "schein" }, kinder);
+    return el("article", { class: "schein", "aria-label": "Spielfeld " + (nr + 1) }, kinder);
   }));
 }
 
@@ -268,11 +428,10 @@ function renderMeine() {
   const sortiert = [...Z.tipps].sort((a, b) => (a.daten.ziehungsdatum < b.daten.ziehungsdatum ? 1 : -1));
   $("meine").replaceChildren(...sortiert.map(({ id, daten }) => {
     const z = ziehungen.get(daten.ziehungsdatum);
-    const zahlen = el("div", { class: "zahlen" });
-    daten.zahlen.forEach((n, i) => {
-      if (i) zahlen.append("  ");
-      zahlen.append(z && z.zahlen.includes(n) ? el("b", {}, String(n)) : String(n));
-    });
+    const treffer = z ? daten.zahlen.filter((n) => z.zahlen.includes(n)) : [];
+    const zahlen = el("div", { class: "kugeln mini", role: "img", "aria-label": "Deine Zahlen " + daten.zahlen.join(", ") +
+      (z ? (treffer.length ? ", Treffer " + treffer.join(", ") : ", kein Treffer") : "") },
+      daten.zahlen.map((n) => kugel(n, z && !z.zahlen.includes(n) ? "daneben" : "")));
     let chip;
     if (!z) chip = el("span", { class: "chip" }, "wartet auf Ziehung");
     else {
@@ -282,7 +441,7 @@ function renderMeine() {
         ? el("span", { class: "chip gewinn" }, text + " · Klasse " + a.klasse)
         : el("span", { class: "chip" }, text);
     }
-    const info = el("div", { class: "leise" }, "Ziehung " + fmtDatum(daten.ziehungsdatum) +
+    const info = el("div", { class: "info" }, "Ziehung " + fmtDatum(daten.ziehungsdatum) +
       " · Superzahl " + (daten.superzahl == null ? "–" : daten.superzahl));
     const loeschen = el("button", { class: Z.loeschFrage === id ? "gefahr" : "zweit", type: "button" },
       Z.loeschFrage === id ? "Wirklich löschen" : "Löschen");
@@ -342,48 +501,99 @@ function renderBilanz() {
 }
 
 /* ---------- Analyse ---------- */
+const SVG_TEXT = { fill: "var(--leise)", "font-size": 11, "font-family": "IBM Plex Mono, monospace" };
+
 function renderDiagramm() {
   const ziehungen = alleZiehungen();
   if (!ziehungen.length) {
-    $("diagramm").replaceChildren(el("div", { class: "leise" },
-      Z.ziehungenStatus === "fehlt" ? "Diagramm nicht verfügbar"
-        : Z.ziehungenStatus === "da" ? "Noch keine Ziehungsdaten vorhanden." : "Ziehungen werden geladen …"));
+    $("diagramm").replaceChildren(el("div", { class: "leise" }, statusText()));
     $("diagramm-text").textContent = "";
     return;
   }
   const h = Lotto.haeufigkeiten(ziehungen);
   const erwartet = (ziehungen.length * 6) / 49;
   const max = Math.ceil(Math.max(...h) / 100) * 100;
-  const B = 640, H = 240, L = 40, R = 8, O = 10, U = 26;
+  const B = 640, H = 240, L = 42, R = 8, O = 10, U = 26;
   const breite = (B - L - R) / 49;
   const y = (v) => O + (H - O - U) * (1 - v / max);
-  const ns = "http://www.w3.org/2000/svg";
-  const s = (tag, a, text) => { const e = document.createElementNS(ns, tag);
-    for (const [k, v] of Object.entries(a)) e.setAttribute(k, v); if (text != null) e.textContent = text; return e; };
-  const svg = s("svg", { viewBox: `0 0 ${B} ${H}`, role: "img",
+  const svg = sv("svg", { viewBox: `0 0 ${B} ${H}`, role: "img",
     "aria-label": "Häufigkeit der Zahlen 1 bis 49; alle liegen nahe am Erwartungswert" });
   for (let t = 0; t <= max; t += max / 4) {
-    svg.append(s("line", { x1: L, x2: B - R, y1: y(t), y2: y(t), stroke: "var(--linie)", "stroke-width": 1 }));
-    svg.append(s("text", { x: L - 6, y: y(t) + 4, "text-anchor": "end", fill: "var(--leise)",
-      "font-size": 10, "font-family": "IBM Plex Mono, monospace" }, fmtZahl(t)));
+    svg.append(sv("line", { x1: L, x2: B - R, y1: y(t), y2: y(t), stroke: "var(--rand)", "stroke-width": 1 }));
+    svg.append(sv("text", { x: L - 6, y: y(t) + 4, "text-anchor": "end", ...SVG_TEXT }, fmtZahl(t)));
   }
   h.forEach((v, i) => {
     const x = L + i * breite;
-    const balken = s("rect", { x: x + 1, y: y(v), width: breite - 2, height: y(0) - y(v), fill: "var(--tinte)", opacity: 0.8 });
-    balken.append(s("title", {}, "Zahl " + (i + 1) + ": " + v + "×"));
+    const balken = sv("rect", { x: x + breite * 0.22, y: y(v), width: breite * 0.56, height: y(0) - y(v),
+      fill: "var(--elfenbein)", opacity: 0.78 });
+    balken.append(sv("title", {}, "Zahl " + (i + 1) + ": " + v + "×"));
     svg.append(balken);
-    if ((i + 1) % 7 === 0 || i === 0) svg.append(s("text", { x: x + breite / 2, y: H - 8, "text-anchor": "middle",
-      fill: "var(--leise)", "font-size": 10, "font-family": "IBM Plex Mono, monospace" }, String(i + 1)));
+    if ((i + 1) % 7 === 0 || i === 0) svg.append(sv("text", { x: x + breite / 2, y: H - 8, "text-anchor": "middle",
+      ...SVG_TEXT }, String(i + 1)));
   });
-  svg.append(s("line", { x1: L, x2: B - R, y1: y(erwartet), y2: y(erwartet), stroke: "var(--signal)",
+  svg.append(sv("line", { x1: L, x2: B - R, y1: y(erwartet), y2: y(erwartet), stroke: "var(--gold)",
     "stroke-width": 2, "stroke-dasharray": "5 4" }));
   $("diagramm").replaceChildren(svg);
   const min = Math.min(...h), maxV = Math.max(...h);
-  $("diagramm-text").textContent = "Rote Linie: bei reinem Zufall erwartet (" + fmtZahl(erwartet) +
+  $("diagramm-text").textContent = "Goldene Linie: bei reinem Zufall erwartet (" + fmtZahl(erwartet) +
     "×). Die seltenste Zahl kam " + min + "×, die häufigste " + maxV + "×." +
     (ERGEBNISSE.chi2_p_wert >= 0.05 ? " Solche Abstände entstehen auch bei echtem Zufall." : "") +
     " Chi-Quadrat-Test auf Gleichverteilung: p = " + fmtZahl(ERGEBNISSE.chi2_p_wert, 2) + "." +
     (ERGEBNISSE.chi2_p_wert >= 0.05 ? "" : " Der Test zeigt eine auffällige Abweichung von der Gleichverteilung.");
+}
+
+function renderSuperzahl() {
+  const ziehungen = alleZiehungen();
+  if (!ziehungen.length) {
+    $("sz-diagramm").replaceChildren(el("div", { class: "leise" }, statusText()));
+    $("sz-text").textContent = "";
+    return;
+  }
+  const h = Lotto.superzahlHaeufigkeiten(ziehungen);
+  const summe = h.reduce((a, b) => a + b, 0);
+  const test = summe ? Lotto.gleichverteilungsTest(h) : null;
+  if (!summe || !Number.isFinite(test.p)) {
+    $("sz-diagramm").replaceChildren(el("div", { class: "leise" }, "Noch keine Superzahl-Daten vorhanden."));
+    $("sz-text").textContent = "";
+    return;
+  }
+  const anteil = h.map((v) => (v / summe) * 100);
+  const oben = anteil.indexOf(Math.max(...anteil));
+  const unten = anteil.indexOf(Math.min(...anteil));
+  const max = Math.max(15, Math.ceil(Math.max(...anteil) / 5) * 5);
+  const B = 420, H = 240, L = 42, R = 6, O = 32, U = 30;
+  const breite = (B - L - R) / 10;
+  const y = (v) => O + (H - O - U) * (1 - v / max);
+  const svg = sv("svg", { viewBox: `0 0 ${B} ${H}`, role: "img",
+    "aria-label": "Anteil jeder Superzahl 0 bis 9 in Prozent; erwartet sind je 10 Prozent" });
+  for (let t = 0; t <= max; t += 5) {
+    const zehn = t === 10;
+    svg.append(sv("line", { x1: L, x2: B - R, y1: y(t), y2: y(t), stroke: zehn ? "var(--gold)" : "var(--rand)",
+      "stroke-width": zehn ? 2 : 1, "stroke-dasharray": zehn ? "5 4" : "none" }));
+    svg.append(sv("text", { x: L - 6, y: y(t) + 4, "text-anchor": "end", ...SVG_TEXT,
+      fill: zehn ? "var(--gold)" : "var(--leise)" }, t + " %"));
+  }
+  anteil.forEach((v, i) => {
+    const x = L + i * breite;
+    const hervor = i === oben;
+    const balken = sv("rect", { x: x + breite * 0.2, y: y(v), width: breite * 0.6, height: y(0) - y(v), rx: 2,
+      fill: hervor ? "var(--rot)" : "var(--elfenbein)", opacity: hervor ? 1 : 0.6 });
+    balken.append(sv("title", {}, "Superzahl " + i + ": " + h[i] + "× (" + fmtZahl(v, 1) + " %)"));
+    svg.append(balken);
+    svg.append(sv("text", { x: x + breite / 2, y: 14, "text-anchor": "middle", ...SVG_TEXT,
+      fill: hervor ? "var(--rot-hell)" : "var(--leise)" }, fmtZahl(v, 1)));
+    svg.append(sv("text", { x: x + breite / 2, y: H - 8, "text-anchor": "middle", fill: "var(--elfenbein)",
+      "font-size": 15, "font-weight": 700, "font-family": "Bricolage Grotesque, sans-serif" }, String(i)));
+  });
+  $("sz-diagramm").replaceChildren(svg);
+  const erste = ziehungen.find((z) => z.superzahl != null);
+  const pText = test.p < 0.01 ? "p < 0,01" : "p = " + fmtZahl(test.p, 2);
+  const regel = "Jede Superzahl hat bei jeder Ziehung genau 10 % Chance, und du wählst sie ohnehin nicht: Sie ist die letzte Ziffer der Losnummer auf deinem Schein.";
+  $("sz-text").textContent = "Seit " + erste.datum.slice(0, 4) + " kam die Superzahl " + oben + " am häufigsten (" +
+    fmtZahl(anteil[oben], 1) + " %), die " + unten + " am seltensten (" + fmtZahl(anteil[unten], 1) + " %). " +
+    (test.p >= 0.05
+      ? "Der Test auf Gleichverteilung ergibt " + pText + " – solche Unterschiede sind bei reinem Zufall normal. " + regel
+      : "Der Test auf Gleichverteilung ergibt " + pText + " und zeigt damit eine auffällige Abweichung. Bei einer fairen Ziehungsmaschine gilt trotzdem: " + regel);
 }
 
 function renderBacktest() {
@@ -398,7 +608,7 @@ function renderBacktest() {
     el("td", {}, s.name === "zufall" ? el("span", { class: "chip" }, "Vergleich")
       : s.p_korrigiert < 0.05 ? el("span", { class: "chip signal" }, "auffällig")
       : el("span", { class: "chip" }, "nicht besser"))));
-  zeilen.push(el("tr", {}, el("td", {}, "Erwartet bei Zufall"), el("td", {}, fmtZahl(e.erwartet_mittel, 3)),
+  zeilen.push(el("tr", { class: "erwartet" }, el("td", {}, "Erwartet bei Zufall"), el("td", {}, fmtZahl(e.erwartet_mittel, 3)),
     el("td", {}, fmtZahl(Lotto.erwarteteVerteilung().slice(3).reduce((a, b) => a + b, 0) * 100, 1) + " %"), el("td", {}, "")));
   $("backtest").replaceChildren(el("thead", {}, kopf), el("tbody", {}, zeilen));
   const besser = e.strategien.filter((s) => s.name !== "zufall" && s.p_korrigiert < 0.05);
@@ -420,7 +630,8 @@ function renderStand() {
 }
 
 /* ---------- Start ---------- */
-function alles() { renderStand(); renderMeine(); renderBilanz(); renderDiagramm(); }
+function renderZiehungen() { renderHero(); renderDiagramm(); renderSuperzahl(); }
+function alles() { renderStand(); renderMeine(); renderBilanz(); renderZiehungen(); }
 
 async function start() {
   neueVorschlaege();
@@ -433,7 +644,7 @@ async function start() {
   if (!db) {
     Z.ziehungenStatus = "fehlt";
     $("stand").textContent = "Ziehungsdaten sind in dieser Ansicht nicht verfügbar.";
-    renderDiagramm();
+    renderZiehungen();
     return;
   }
   Z.db = db;
@@ -453,7 +664,7 @@ async function start() {
   }, () => {
     Z.ziehungenStatus = "fehlt";
     $("stand").textContent = "Ziehungen konnten nicht geladen werden. Lade die Seite neu.";
-    renderDiagramm();
+    renderZiehungen();
   });
   db.doc("meta/stand").onSnapshot((d) => { Z.standGeladen = true; Z.stand = d.exists ? d.data() : null; renderStand(); },
     () => { Z.standGeladen = true; Z.standFehler = true; renderStand(); });
