@@ -37,7 +37,8 @@ Ein Tipp wird verworfen und neu gezogen, wenn mindestens eine Regel greift:
 2. 4 oder mehr direkt aufeinanderfolgende Zahlen
 3. Alle 6 Zahlen mit gleichem Abstand (arithmetische Folge)
 4. Alle 6 Zahlen in einer Zeile oder Spalte des 7×7-Tippscheins
-5. 3 oder mehr Zahlen aus der letzten Ziehung
+5. Alle 6 Zahlen auf einer Diagonale des 7×7-Tippscheins
+6. 3 oder mehr Zahlen aus der letzten Ziehung
 
 Innerhalb der erlaubten Menge bleibt die Auswahl gleichverteilt (Rejection Sampling).
 
