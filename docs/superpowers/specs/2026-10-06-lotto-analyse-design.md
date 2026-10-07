@@ -1,7 +1,7 @@
 # Lotto 6 aus 49: Tipp-Generator und Musteranalyse – Design
 
 **Datum:** 2026-10-06
-**Status:** vom Nutzer freigegeben (Chat), Spec zur Prüfung
+**Status:** vom Nutzer freigegeben (Chat), inkl. Konten und Auto-Update
 
 ## Ziel
 
@@ -63,13 +63,39 @@ Tipp der Strategie = die 6 Zahlen mit der höchsten vorhergesagten Wahrscheinlic
 
 ## Teil 2: Web-App
 
-Eine eigenständige HTML-Seite (als Artifact veröffentlicht), handytauglich:
+Eine HTML-Seite (als Artifact veröffentlicht), handytauglich, mit den Capabilities `db` und `user`.
 
-- Button „5 smarte Tipps“; jeder Tipp auf einem 7×7-Tippscheinraster. Dieselben Filterregeln wie in Python, in JavaScript nachgebaut.
-- Balkendiagramm: Häufigkeit jeder Zahl seit 1955.
-- Tabelle mit den Backtest-Ergebnissen aus `ergebnisse.json`.
-- Ziehungsdaten und Ergebnisse werden beim Bauen eingebettet. Aktualisierung durch Neubau.
-- Kurzer, ehrlicher Hinweistext: keine Strategie erhöht die Gewinnchance.
+### Bereiche der Seite
+
+1. **Tipps erzeugen:** Button „5 smarte Tipps“; jeder Tipp auf einem 7×7-Tippscheinraster. Dieselben Filterregeln wie in Python, in JavaScript nachgebaut. Pro Tipp ein Button „Speichern“.
+2. **Meine Tipps:** gespeicherte Tipps des angemeldeten Nutzers mit Ziehungsdatum und Superzahl (letzte Ziffer der Losnummer). Nach der Ziehung: Anzahl Richtige, Superzahl-Treffer, Gewinnklasse.
+3. **Meine Bilanz:** Anzahl gespielter Tipps, Verteilung der Richtigen, Anzahl Tipps mit Gewinnklasse; daneben die bei Zufall erwartete Anzahl.
+4. **Analyse:** Balkendiagramm Häufigkeit jeder Zahl seit 1955 (aus der Datenbank berechnet) und Tabelle der Backtest-Ergebnisse (beim Bauen aus `ergebnisse.json` eingebettet).
+5. Stand der Daten („letzte Ziehung: …, aktualisiert am …“) und kurzer, ehrlicher Hinweistext: keine Strategie erhöht die Gewinnchance.
+
+### Benutzerkonten
+
+Identität über die `user`-Capability (Claude-Konto des Betrachters); kein eigenes Login. Nutzbar für alle, mit denen der Besitzer die Seite teilt. Wer nicht angemeldet ist oder keine Datenbank erhält, kann weiterhin Tipps erzeugen und die Analyse sehen; Speichern ist dann ausgeblendet.
+
+### Datenbank (`db`)
+
+| Pfad | Inhalt | Zugriff |
+|---|---|---|
+| `ziehungen/{jahr}` | `{ziehungen: [{datum, zahlen[6], superzahl}]}` pro Kalenderjahr (≈ 72 Dokumente) | alle lesen, nur Besitzer/Claude schreibt |
+| `meta/stand` | `{letzte_ziehung, aktualisiert_am, anzahl}` | wie oben |
+| `data/users/{id}/{tippId}` | `{ziehungsdatum, zahlen[6], superzahl, erstellt_am}` | privat für den jeweiligen Nutzer |
+
+Gewinnklassen werden im Browser berechnet, nicht gespeichert: Kl. 1: 6 + SZ, 2: 6, 3: 5 + SZ, 4: 5, 5: 4 + SZ, 6: 4, 7: 3 + SZ, 8: 3, 9: 2 + SZ. Ist die Ziehung zum gespeicherten Datum noch nicht in der Datenbank, zeigt der Tipp „wartet auf Ziehung“.
+
+### Automatische Datenaktualisierung
+
+Geplante Aufgabe (claude.ai Scheduled Task), Mi + Sa 23:00 und Do + So 09:00 (Europe/Berlin; der zweite Lauf fängt verspätete Archiv-Updates ab). Jeder Lauf:
+
+1. lädt die CSV aus dem Archiv und validiert sie mit `lotto.daten`,
+2. liest `meta/stand` und schreibt nur das aktuelle Jahresdokument plus `meta/stand` neu, wenn es neue Ziehungen gibt (idempotent: mehrfaches Ausführen ändert nichts),
+3. beendet sich ohne Schreibzugriff, wenn nichts Neues da ist.
+
+Die Erstbefüllung aller Jahresdokumente macht ein Skript `lotto/export_db.py`, das die Dokumente als JSON erzeugt; Claude schreibt sie per `ArtifactData`-Batch.
 
 ## Fehlerbehandlung
 
@@ -84,8 +110,10 @@ Eine eigenständige HTML-Seite (als Artifact veröffentlicht), handytauglich:
 - `smarter_tipp`: 1.000 Tipps, keiner verletzt eine Regel.
 - `merkmale`: kein Datenleck (Merkmale für Ziehung *i* ändern sich nicht, wenn Ziehung *i* verändert wird).
 - `daten`: korrekte Zeilen werden geparst, fehlerhafte abgelehnt.
+- `export_db`: Jahresdokumente enthalten zusammen exakt alle Ziehungen; `meta/stand` zeigt die letzte.
+- Gewinnklassen-Logik (JS): je ein Beispiel pro Klasse plus „kein Gewinn“, geprüft mit Node.
 - `backtest`: auf künstlich manipulierten Daten (Zahl 7 kommt immer) muss die Strategie „heiss“ signifikant gewinnen. Damit ist bewiesen, dass der Test echte Muster überhaupt finden kann.
 
 ## Nicht im Umfang
 
-Andere Lotterien (AT, EuroMillions), LSTM-Modell, automatische Datenaktualisierung der Web-App, Benutzerkonten.
+Andere Lotterien (AT, EuroMillions), LSTM-Modell, öffentliche Registrierung ohne Claude-Konto, eigener Server, Benachrichtigungen bei Gewinn.
