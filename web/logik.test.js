@@ -68,9 +68,26 @@ test("Häufigkeiten und Ziehungstage", () => {
   assert.equal(h.length, 49);
   assert.equal(h[0], 2);
   assert.equal(h[48], 0);
-  // Dienstag, 6.10.2026 -> Mi 7.10., Sa 10.10., Mi 14.10.
-  assert.deepEqual(L.naechsteZiehungstage(new Date(2026, 9, 6, 21, 0), 3),
+  // Dienstag, 6.10.2026 -> Mi 7.10., Sa 10.10., Mi 14.10. (Instants aus UTC, Berliner Zeit = UTC+2)
+  assert.deepEqual(L.naechsteZiehungstage(new Date(Date.UTC(2026, 9, 6, 19, 0)), 3),
     ["2026-10-07", "2026-10-10", "2026-10-14"]);
   // Samstag zählt mit
-  assert.deepEqual(L.naechsteZiehungstage(new Date(2026, 9, 10, 9, 0), 1), ["2026-10-10"]);
+  assert.deepEqual(L.naechsteZiehungstage(new Date(Date.UTC(2026, 9, 10, 7, 0)), 1), ["2026-10-10"]);
+});
+
+test("annahmeschlussVorbei (Europe/Berlin, Sommerzeit UTC+2)", () => {
+  const berlin = (tag, h, m) => new Date(Date.UTC(2026, 9, tag, h - 2, m));
+  assert.equal(L.annahmeschlussVorbei(berlin(7, 17, 59)), false); // Mi 17:59
+  assert.equal(L.annahmeschlussVorbei(berlin(7, 18, 0)), true);   // Mi 18:00
+  assert.equal(L.annahmeschlussVorbei(berlin(10, 18, 59)), false); // Sa 18:59
+  assert.equal(L.annahmeschlussVorbei(berlin(10, 19, 0)), true);  // Sa 19:00
+  assert.equal(L.annahmeschlussVorbei(berlin(6, 20, 0)), false);  // Di
+});
+
+test("naechsteZiehungstage überspringt heute bei Annahmeschluss", () => {
+  const mi = new Date(Date.UTC(2026, 9, 7, 16, 30)); // Mi 18:30 Berlin
+  assert.deepEqual(L.naechsteZiehungstage(mi, 2, true), ["2026-10-10", "2026-10-14"]);
+  assert.deepEqual(L.naechsteZiehungstage(mi, 2, false), ["2026-10-07", "2026-10-10"]);
+  // Berliner Datum zählt: Mi 00:30 Berlin ist noch Di 22:30 UTC
+  assert.deepEqual(L.naechsteZiehungstage(new Date(Date.UTC(2026, 9, 6, 22, 30)), 1), ["2026-10-07"]);
 });

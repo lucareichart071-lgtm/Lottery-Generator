@@ -87,18 +87,39 @@
     return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
   }
 
-  function naechsteZiehungstage(heute, n) {
+  // Berliner Wochentag (0 = So ... 6 = Sa), Stunde, Minute und Datum für einen Zeitpunkt.
+  function berlinTeile(jetzt) {
+    const teile = {};
+    for (const p of new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Berlin", weekday: "short", year: "numeric",
+      month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(jetzt)) {
+      teile[p.type] = p.value;
+    }
+    const tage = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+    return { tag: tage[teile.weekday], stunde: Number(teile.hour), minute: Number(teile.minute),
+      jahr: Number(teile.year), monat: Number(teile.month), datum: Number(teile.day) };
+  }
+
+  // true, wenn die heutige Ziehung (Mi 18:00, Sa 19:00 Berliner Zeit) schon nicht mehr tippbar ist.
+  function annahmeschlussVorbei(jetzt) {
+    const b = berlinTeile(jetzt);
+    const minuten = b.stunde * 60 + b.minute;
+    return (b.tag === 3 && minuten >= 18 * 60) || (b.tag === 6 && minuten >= 19 * 60);
+  }
+
+  function naechsteZiehungstage(heute, n, heuteGeschlossen) {
     const tage = [];
-    const d = new Date(heute.getFullYear(), heute.getMonth(), heute.getDate());
+    const b = berlinTeile(heute);
+    const d = new Date(Date.UTC(b.jahr, b.monat - 1, b.datum));
+    if (heuteGeschlossen) d.setUTCDate(d.getUTCDate() + 1);
     while (tage.length < n) {
-      if (d.getDay() === 3 || d.getDay() === 6) tage.push(isoDatum(d));
-      d.setDate(d.getDate() + 1);
+      if (d.getUTCDay() === 3 || d.getUTCDay() === 6) tage.push(d.toISOString().slice(0, 10));
+      d.setUTCDate(d.getUTCDate() + 1);
     }
     return tage;
   }
 
   const api = { GRUENDE, zufallstipp, istBeliebtesMuster, smarterTipp, auswertung,
-    erwarteteVerteilung, gewinnWahrscheinlichkeit, haeufigkeiten, naechsteZiehungstage, isoDatum };
+    erwarteteVerteilung, gewinnWahrscheinlichkeit, haeufigkeiten, naechsteZiehungstage, annahmeschlussVorbei, isoDatum };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Lotto = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

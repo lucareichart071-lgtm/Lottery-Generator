@@ -35,7 +35,7 @@ try:
         json.dump({"letzte_ziehung": letzte, "aktualisiert_am": datetime.now(timezone.utc).isoformat(timespec="seconds"),
                    "anzahl": len(rows)}, f)
     print("letzte Ziehung:", letzte, "Anzahl:", len(rows))
-except (AssertionError, urllib.error.URLError, json.JSONDecodeError, ValueError) as e:
+except Exception as e:
     print(f"Fehler beim Skript: {e}")
     raise
 ```

@@ -81,7 +81,7 @@ input, select { font: 400 0.9rem var(--font-text); padding: 6px 8px; border-radi
 .chip { font: 500 0.75rem var(--font-zahl); padding: 3px 9px; border-radius: 99px; white-space: nowrap;
   border: 1px solid var(--linie); color: var(--leise); }
 .chip.gewinn { border-color: var(--gut); color: var(--gut); }
-.chip.signal { border-color: var(--signal); color: var(--signal); background: var(--signal-weich); }
+.chip.signal { white-space: normal; border-color: var(--signal); color: var(--signal); background: var(--signal-weich); }
 .aktionen { display: flex; gap: 8px; grid-column: 1 / -1; flex-wrap: wrap; align-items: center; }
 .aktionen button { padding: 4px 10px; font-size: 0.8rem; }
 .leer { border: 1px dashed var(--linie); border-radius: 8px; padding: 18px; color: var(--leise); }
@@ -115,7 +115,7 @@ td:first-child { font-family: var(--font-text); }
       <h2 id="t-tipps">Smarte Tipps</h2>
       <button id="neu" type="button">5 neue Tipps</button>
     </div>
-    <p class="hinweis-box">Jeder Tipp hat dieselbe Chance von 1 : 139.838.160 auf den Jackpot. Diese Tipps meiden Geburtstage, Reihen auf dem Schein und die letzten Gewinnzahlen. So teilst du einen Gewinn mit weniger Leuten.</p>
+    <p class="hinweis-box">Jeder Tipp hat dieselbe Chance von 1 : 139.838.160 auf den Jackpot. Diese Tipps meiden Geburtstage, Reihen auf dem Schein und die letzten Gewinnzahlen. So teilst du einen Gewinn wahrscheinlich mit weniger Leuten.</p>
     <div class="scheine" id="scheine"></div>
   </section>
 
@@ -191,7 +191,7 @@ function feld(tipp) {
 }
 
 function renderVorschlaege() {
-  const tage = Lotto.naechsteZiehungstage(new Date(), 4);
+  const tage = Lotto.naechsteZiehungstage(new Date(), 4, Lotto.annahmeschlussVorbei(new Date()));
   $("scheine").replaceChildren(...Z.vorschlaege.map((tipp, nr) => {
     const kinder = [feld(tipp), el("div", { class: "zahlen" }, tipp.join("  "))];
     if (Z.speichernMoeglich) {
@@ -346,7 +346,8 @@ function renderDiagramm() {
   const ziehungen = alleZiehungen();
   if (!ziehungen.length) {
     $("diagramm").replaceChildren(el("div", { class: "leise" },
-      Z.ziehungenStatus === "fehlt" ? "Diagramm nicht verfügbar" : "Ziehungen werden geladen …"));
+      Z.ziehungenStatus === "fehlt" ? "Diagramm nicht verfügbar"
+        : Z.ziehungenStatus === "da" ? "Noch keine Ziehungsdaten vorhanden." : "Ziehungen werden geladen …"));
     $("diagramm-text").textContent = "";
     return;
   }
@@ -379,7 +380,10 @@ function renderDiagramm() {
   $("diagramm").replaceChildren(svg);
   const min = Math.min(...h), maxV = Math.max(...h);
   $("diagramm-text").textContent = "Rote Linie: bei reinem Zufall erwartet (" + fmtZahl(erwartet) +
-    "×). Die seltenste Zahl kam " + min + "×, die häufigste " + maxV + "×. Solche Abstände entstehen auch bei echtem Zufall.";
+    "×). Die seltenste Zahl kam " + min + "×, die häufigste " + maxV + "×." +
+    (ERGEBNISSE.chi2_p_wert >= 0.05 ? " Solche Abstände entstehen auch bei echtem Zufall." : "") +
+    " Chi-Quadrat-Test auf Gleichverteilung: p = " + fmtZahl(ERGEBNISSE.chi2_p_wert, 2) + "." +
+    (ERGEBNISSE.chi2_p_wert >= 0.05 ? "" : " Der Test zeigt eine auffällige Abweichung von der Gleichverteilung.");
 }
 
 function renderBacktest() {
@@ -392,16 +396,17 @@ function renderBacktest() {
     el("td", {}, fmtZahl(s.mittel_treffer, 3)),
     el("td", {}, fmtZahl(s.anteil_3_plus * 100, 1) + " %"),
     el("td", {}, s.name === "zufall" ? el("span", { class: "chip" }, "Vergleich")
-      : s.p_korrigiert < 0.05 ? el("span", { class: "chip signal" }, "besser als Zufall")
+      : s.p_korrigiert < 0.05 ? el("span", { class: "chip signal" }, "auffällig")
       : el("span", { class: "chip" }, "nicht besser"))));
   zeilen.push(el("tr", {}, el("td", {}, "Erwartet bei Zufall"), el("td", {}, fmtZahl(e.erwartet_mittel, 3)),
     el("td", {}, fmtZahl(Lotto.erwarteteVerteilung().slice(3).reduce((a, b) => a + b, 0) * 100, 1) + " %"), el("td", {}, "")));
   $("backtest").replaceChildren(el("thead", {}, kopf), el("tbody", {}, zeilen));
   const besser = e.strategien.filter((s) => s.name !== "zufall" && s.p_korrigiert < 0.05);
   $("backtest-fazit").textContent = besser.length
-    ? "Auffällig: " + besser.map((s) => NAMEN[s.name]).join(", ") + " liegt signifikant über dem Zufall."
-    : "Keine Strategie, auch nicht das KI-Modell, trifft signifikant öfter als reiner Zufall. Alle Modelle wurden bis " +
-      fmtDatum(e.test_ab) + " trainiert und an Ziehungen getestet, die sie nie gesehen hatten.";
+    ? "Auffällig im Backtest: " + besser.map((s) => NAMEN[s.name]).join(", ") +
+      ". Ein einzelnes auffälliges Ergebnis kann Zufall sein – die Gewinnchance jedes Tipps bleibt gleich."
+    : "Keine Strategie, auch nicht das KI-Modell, trifft signifikant öfter als reiner Zufall. Das KI-Modell wurde nur mit Ziehungen vor dem " +
+      fmtDatum(e.test_ab) + " trainiert und an den " + fmtZahl(e.n_test) + " Ziehungen danach getestet, die es nie gesehen hatte.";
 }
 
 function renderStand() {

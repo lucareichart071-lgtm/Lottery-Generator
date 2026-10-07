@@ -26,6 +26,7 @@ class Ziehung:
     superzahl: int | None
 
 
+# Hinweis: zeitplan/aktualisierung.md enthält eine eigenständige Kopie dieser Validierung (beide synchron halten).
 def parse_csv(text: str) -> list[Ziehung]:
     reader = csv.DictReader(io.StringIO(text))
     if reader.fieldnames != SPALTEN:
