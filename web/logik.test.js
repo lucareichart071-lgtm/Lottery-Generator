@@ -91,3 +91,24 @@ test("naechsteZiehungstage überspringt heute bei Annahmeschluss", () => {
   // Berliner Datum zählt: Mi 00:30 Berlin ist noch Di 22:30 UTC
   assert.deepEqual(L.naechsteZiehungstage(new Date(Date.UTC(2026, 9, 6, 22, 30)), 1), ["2026-10-07"]);
 });
+
+test("chiQuadratP stimmt mit scipy überein", () => {
+  const faelle = [[9.0, 9, 0.43727418891386693], [6.71, 9, 0.6672832974902754],
+    [16.92, 9, 0.04998360638750561], [48, 48, 0.472849720547744],
+    [43, 48, 0.6774122974024184], [2.0, 1, 0.15729920705028105]];
+  for (const [x, df, erwartet] of faelle) {
+    assert.ok(Math.abs(L.chiQuadratP(x, df) - erwartet) < 1e-9, `chiQuadratP(${x}, ${df}) = ${L.chiQuadratP(x, df)}`);
+  }
+});
+
+test("gleichverteilungsTest wie scipy", () => {
+  const r = L.gleichverteilungsTest([313, 307, 306, 318, 329, 335, 321, 342, 300, 295]);
+  assert.ok(Math.abs(r.statistik - 6.691092861655085) < 1e-9);
+  assert.ok(Math.abs(r.p - 0.6692454224874387) < 1e-9);
+});
+
+test("superzahlHaeufigkeiten zählt und überspringt null", () => {
+  const z = [1, 2, 3, 4, 5, 6];
+  assert.deepEqual(L.superzahlHaeufigkeiten([{ zahlen: z, superzahl: 7 }, { zahlen: z, superzahl: null },
+    { zahlen: z, superzahl: 7 }, { zahlen: z, superzahl: 0 }]), [1, 0, 0, 0, 0, 0, 0, 2, 0, 0]);
+});

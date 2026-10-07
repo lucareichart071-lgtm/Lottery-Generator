@@ -118,8 +118,71 @@
     return tage;
   }
 
+  // Häufigkeit jeder Superzahl 0-9; Ziehungen ohne Superzahl werden übersprungen.
+  function superzahlHaeufigkeiten(ziehungen) {
+    const h = new Array(10).fill(0);
+    for (const z of ziehungen) {
+      if (z.superzahl != null) h[z.superzahl] += 1;
+    }
+    return h;
+  }
+
+  // ln Gamma(x) per Lanczos-Näherung (g = 7, n = 9).
+  function lnGamma(x) {
+    const c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313,
+      -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6,
+      1.5056327351493116e-7];
+    if (x < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * x)) - lnGamma(1 - x);
+    x -= 1;
+    let a = c[0];
+    const t = x + 7.5;
+    for (let i = 1; i < 9; i++) a += c[i] / (x + i);
+    return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
+  }
+
+  // Obere regularisierte unvollständige Gammafunktion Q(a, x) (Numerical Recipes gammp/gammq).
+  function gammaQ(a, x) {
+    if (x <= 0) return 1;
+    const lg = lnGamma(a);
+    if (x < a + 1) {
+      let ap = a, summe = 1 / a, del = summe;
+      for (let n = 0; n < 1000; n++) {
+        ap += 1; del *= x / ap; summe += del;
+        if (Math.abs(del) < Math.abs(summe) * 1e-16) break;
+      }
+      return 1 - summe * Math.exp(-x + a * Math.log(x) - lg);
+    }
+    const tiny = 1e-300;
+    let b = x + 1 - a, c = 1 / tiny, d = 1 / b, h = d;
+    for (let i = 1; i < 1000; i++) {
+      const an = -i * (i - a);
+      b += 2;
+      d = an * d + b; if (Math.abs(d) < tiny) d = tiny;
+      c = b + an / c; if (Math.abs(c) < tiny) c = tiny;
+      d = 1 / d;
+      const del = d * c;
+      h *= del;
+      if (Math.abs(del - 1) < 1e-16) break;
+    }
+    return Math.exp(-x + a * Math.log(x) - lg) * h;
+  }
+
+  // p-Wert (obere Flanke) der Chi-Quadrat-Verteilung.
+  function chiQuadratP(statistik, freiheitsgrade) {
+    return gammaQ(freiheitsgrade / 2, statistik / 2);
+  }
+
+  // Pearson-Chi-Quadrat gegen Gleichverteilung, df = k - 1.
+  function gleichverteilungsTest(zaehlungen) {
+    const n = zaehlungen.reduce((s, v) => s + v, 0);
+    const erwartet = n / zaehlungen.length;
+    const statistik = zaehlungen.reduce((s, v) => s + (v - erwartet) ** 2 / erwartet, 0);
+    return { statistik, p: chiQuadratP(statistik, zaehlungen.length - 1) };
+  }
+
   const api = { GRUENDE, zufallstipp, istBeliebtesMuster, smarterTipp, auswertung,
-    erwarteteVerteilung, gewinnWahrscheinlichkeit, haeufigkeiten, naechsteZiehungstage, annahmeschlussVorbei, isoDatum };
+    erwarteteVerteilung, gewinnWahrscheinlichkeit, haeufigkeiten, naechsteZiehungstage, annahmeschlussVorbei, isoDatum,
+    superzahlHaeufigkeiten, chiQuadratP, gleichverteilungsTest };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Lotto = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);
