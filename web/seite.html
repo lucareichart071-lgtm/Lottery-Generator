@@ -68,7 +68,8 @@ section > * { min-width: 0; }
 }
 .kugel.geist { background: none; box-shadow: none; border: 1.5px dashed rgba(243, 236, 216, 0.3); }
 .kugel.sz.geist { border-color: rgba(232, 65, 77, 0.55); }
-.kugel.daneben { opacity: 0.35; filter: saturate(0.3); }
+.kugel.daneben { opacity: 0.55; filter: saturate(0.3); }
+.kugel.treffer { outline: 2px solid var(--gold); outline-offset: 2px; }
 
 /* ---------- Bühne ---------- */
 .buehne { display: grid; gap: 36px; }
@@ -77,12 +78,14 @@ section > * { min-width: 0; }
 .intro { color: var(--leise); font-size: 1.125rem; max-width: 56ch; }
 .ziehung { display: grid; gap: 16px; justify-items: start; }
 .ziehung-titel { font: 600 1.25rem/1.2 var(--font-display); }
-.rinne { --d: clamp(38px, 10.5vw, 76px); position: relative; display: flex; align-items: flex-end;
-  gap: clamp(6px, 1.4vw, 14px); padding: 0 clamp(6px, 1.4vw, 14px) 12px; max-width: 100%; }
+.rinne { --d: clamp(32px, 9.5vw, 76px); position: relative; display: flex; align-items: flex-end;
+  gap: clamp(6px, 1.4vw, 14px); padding: 22px clamp(6px, 1.4vw, 14px) 12px; max-width: 100%; }
 .rinne::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 7px; border-radius: 4px;
   background: linear-gradient(180deg, #2a3278, #0f1336); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1); }
-.sz-gruppe { display: grid; justify-items: center; gap: 4px; margin-left: clamp(4px, 2vw, 22px); }
-.sz-gruppe small { font: 500 0.75rem var(--font-zahl); color: var(--rot-hell); }
+/* Die Gruppe ist genau eine Kugel breit; das Etikett sitzt absolut darüber und zählt nicht zur Zeilenbreite. */
+.sz-gruppe { position: relative; flex: none; width: var(--d); margin-left: clamp(4px, 2vw, 22px); }
+.sz-gruppe small { position: absolute; left: 50%; bottom: 100%; transform: translateX(-50%); margin-bottom: 6px;
+  white-space: nowrap; font: 500 0.75rem/1 var(--font-zahl); color: var(--rot-hell); }
 .stand { font: 400 0.875rem var(--font-zahl); color: var(--leise); }
 
 /* ---------- Knöpfe & Hinweise ---------- */
@@ -115,7 +118,7 @@ button:disabled { opacity: 0.55; cursor: default; }
   font: 700 0.875rem var(--font-display); color: var(--druck); border-bottom: 1.5px solid var(--druck); padding-bottom: 6px; }
 .schein-kopf span:last-child { font: 500 0.6875rem var(--font-zahl); }
 .kugeln.klein { --d: 22px; gap: 4px; justify-content: space-between;
-  overflow: hidden; padding-block: 2px 7px; }
+  padding-block: 2px 7px; clip-path: inset(-4px -12px -12px -5px); }
 @supports (width: 1cqi) { .kugeln.klein { --d: min(30px, 14cqi); } }
 .feld { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
 .feld span { position: relative; aspect-ratio: 1; max-width: 100%; display: grid; place-items: center;
@@ -123,13 +126,13 @@ button:disabled { opacity: 0.55; cursor: default; }
 .feld span.an { color: var(--tinte); }
 .feld svg { position: absolute; left: -14%; top: -14%; width: 128%; height: 128%; overflow: visible; pointer-events: none; }
 .feld path { fill: none; stroke: var(--stift); stroke-width: 2.3; stroke-linecap: round; }
-.speichern { display: grid; grid-template-columns: minmax(0, 1fr) 64px; gap: 8px;
+.speichern { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px;
   border-top: 1px dashed rgba(163, 80, 93, 0.55); padding-top: 12px; }
 .speichern button { grid-column: 1 / -1; }
 .schein label { display: grid; gap: 3px; font: 600 0.75rem var(--font-text); color: var(--druck); }
 .schein input, .schein select { width: 100%; min-width: 0; font: 400 0.9375rem var(--font-text); padding: 6px 8px;
   border-radius: 3px; border: 1px solid rgba(31, 27, 48, 0.3); background: #fffdf6; color: var(--tinte); }
-.schein input { font: 700 1rem var(--font-display); color: var(--stift); }
+.schein input { font: 700 1rem var(--font-display); color: var(--stift); width: 4.5rem; justify-self: start; }
 .schein button { padding: 8px 14px; font-size: 0.9375rem; }
 .schein button.zweit { background: transparent; color: var(--tinte); border-color: rgba(31, 27, 48, 0.4); }
 .schein button.zweit:hover { border-color: var(--tinte); background: rgba(255, 255, 255, 0.5); }
@@ -138,7 +141,7 @@ button:disabled { opacity: 0.55; cursor: default; }
 .liste { display: grid; gap: 10px; }
 .tipp-zeile { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px 16px; align-items: center;
   background: var(--studio); border: 1px solid var(--rand); border-radius: 12px; padding: 14px 16px; }
-.kugeln.mini { --d: 32px; flex-wrap: wrap; }
+.kugeln.mini { --d: 32px; flex-wrap: wrap; gap: 10px; padding: 4px; }
 .aktionen { display: flex; gap: 8px 10px; grid-column: 1 / -1; flex-wrap: wrap; align-items: center; }
 .aktionen .info { color: var(--leise); margin-right: auto; font-size: 0.9375rem; }
 .aktionen button { padding: 5px 14px; font-size: 0.875rem; }
@@ -176,10 +179,10 @@ tr.erwartet td { color: var(--gold); border-bottom: none; }
     50% { opacity: 1; }
     to { transform: none; opacity: 1; }
   }
-  .ziehen .feld path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: strich 170ms ease-out forwards;
-    animation-delay: var(--v); }
+  /* Nur die Keyframes verstecken den Strich (fill-mode backwards); ohne Animation bleibt das Kreuz sichtbar. */
+  .ziehen .feld path { animation: strich 170ms ease-out backwards; animation-delay: var(--v); }
   .ziehen .feld path + path { animation-delay: calc(var(--v) + 160ms); }
-  @keyframes strich { to { stroke-dashoffset: 0; } }
+  @keyframes strich { from { stroke-dasharray: 1; stroke-dashoffset: 1; } to { stroke-dasharray: 1; stroke-dashoffset: 0; } }
   .rinne.laedt .kugel.geist { animation: warten 1.6s ease-in-out infinite alternate; }
   @keyframes warten { to { opacity: 0.35; } }
 }
@@ -324,10 +327,10 @@ function renderHero() {
 }
 
 /* ---------- Tipps ---------- */
-function neueVorschlaege() {
+function neueVorschlaege(animieren = true) {
   const letzte = letzteZiehung();
   Z.vorschlaege = Array.from({ length: 5 }, () => Lotto.smarterTipp(letzte ? letzte.zahlen : null));
-  renderVorschlaege(true);
+  renderVorschlaege(animieren);
 }
 
 // Spielfeld 7×7; angekreuzte Felder bekommen ein Stiftkreuz, das nacheinander gezeichnet wird (--v = Verzögerung).
@@ -431,7 +434,7 @@ function renderMeine() {
     const treffer = z ? daten.zahlen.filter((n) => z.zahlen.includes(n)) : [];
     const zahlen = el("div", { class: "kugeln mini", role: "img", "aria-label": "Deine Zahlen " + daten.zahlen.join(", ") +
       (z ? (treffer.length ? ", Treffer " + treffer.join(", ") : ", kein Treffer") : "") },
-      daten.zahlen.map((n) => kugel(n, z && !z.zahlen.includes(n) ? "daneben" : "")));
+      daten.zahlen.map((n) => kugel(n, z ? (z.zahlen.includes(n) ? "treffer" : "daneben") : "")));
     let chip;
     if (!z) chip = el("span", { class: "chip" }, "wartet auf Ziehung");
     else {
@@ -634,7 +637,7 @@ function renderZiehungen() { renderHero(); renderDiagramm(); renderSuperzahl(); 
 function alles() { renderStand(); renderMeine(); renderBilanz(); renderZiehungen(); }
 
 async function start() {
-  neueVorschlaege();
+  neueVorschlaege(false);
   renderBacktest();
   alles();
   $("neu").addEventListener("click", () => { Z.geklickt = true; neueVorschlaege(); });
