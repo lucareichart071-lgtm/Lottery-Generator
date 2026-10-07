@@ -30,6 +30,7 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body { background: var(--papier); color: var(--tinte); font-family: var(--font-text);
   font-size: 16px; line-height: 1.5; }
 .seite { max-width: 1040px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 56px;
@@ -65,7 +66,7 @@ button:disabled { opacity: 0.5; cursor: default; }
 .feld span.an::before { transform: rotate(45deg); }
 .feld span.an::after { transform: rotate(-45deg); }
 .zahlen { font: 700 1.35rem var(--font-display); letter-spacing: 0.04em;
-  font-variant-numeric: tabular-nums; }
+  font-variant-numeric: tabular-nums; white-space: pre-wrap; }
 .speichern { display: grid; grid-template-columns: 1fr 64px; gap: 6px; }
 .speichern button { grid-column: 1 / -1; }
 label { display: grid; gap: 2px; font-size: 0.75rem; color: var(--leise); }
@@ -153,7 +154,10 @@ const NAMEN = { zufall: "Reiner Zufall", heiss: "Heiße Zahlen (letzte 10)",
   kalt: "Kalte Zahlen (letzte 10)", ueberfaellig: "Überfällige Zahlen",
   modell: "KI-Modell (Gradient Boosting)" };
 const Z = { jahre: new Map(), stand: null, standGeladen: false, tipps: [], vorschlaege: [], geklickt: false,
-  db: null, uid: null, speichernMoeglich: false, loeschFrage: null };
+  db: null, uid: null, speichernMoeglich: false, loeschFrage: null,
+  ziehungenStatus: "laden", tippsFehler: false, loeschFehler: new Set(), nurLesen: false,
+  eingabeBeruehrt: false, ersteLieferung: true, standFehler: false };
+const TEXT_NUR_LESEN = "Du hast nur Lesezugriff. Bitte den Besitzer um Mitwirkenden-Zugriff, um Tipps zu speichern.";
 
 const $ = (id) => document.getElementById(id);
 function el(tag, attrs, ...kinder) {
@@ -195,6 +199,8 @@ function renderVorschlaege() {
         tage.map((t) => el("option", { value: t }, fmtDatum(t))));
       const sz = el("input", { id: "sz-" + nr, inputmode: "numeric", maxlength: "1",
         placeholder: "0–9", "aria-label": "Superzahl" });
+      for (const f of [datum, sz]) { f.addEventListener("input", () => { Z.eingabeBeruehrt = true; });
+        f.addEventListener("change", () => { Z.eingabeBeruehrt = true; }); }
       const knopf = el("button", { class: "zweit", type: "button" }, "Als gespielt speichern");
       knopf.addEventListener("click", () => speichern(tipp, datum.value, sz.value, knopf));
       kinder.push(el("div", { class: "speichern" },
@@ -207,6 +213,7 @@ function renderVorschlaege() {
 }
 
 async function speichern(tipp, ziehungsdatum, szText, knopf) {
+  knopf.textContent = "Als gespielt speichern";
   const sz = szText.trim() === "" ? null : Number(szText.trim());
   if (sz !== null && !(Number.isInteger(sz) && sz >= 0 && sz <= 9)) {
     knopf.textContent = "Superzahl muss 0–9 sein";
@@ -218,9 +225,15 @@ async function speichern(tipp, ziehungsdatum, szText, knopf) {
     await Z.db.collection("data/users/" + Z.uid).add({
       ziehungsdatum, zahlen: tipp, superzahl: sz, erstellt_am: new Date().toISOString() });
     knopf.textContent = "Gespeichert";
+    setTimeout(() => { knopf.disabled = false; knopf.textContent = "Als gespielt speichern"; }, 2000);
   } catch (e) {
+    if (e && e.code === "invalid_argument") {
+      Z.nurLesen = true; Z.speichernMoeglich = false;
+      renderVorschlaege(); renderMeine(); renderBilanz();
+      return;
+    }
     knopf.disabled = false;
-    knopf.textContent = e && e.code === "quota_exceeded"
+    knopf.textContent = e && (e.code === "quota_exceeded" || e.code === "resource_exhausted")
       ? "Speicher voll – lösche alte Tipps" : "Nicht gespeichert – nochmal versuchen";
   }
 }
@@ -233,6 +246,14 @@ function ziehungNachDatum() {
 }
 
 function renderMeine() {
+  if (Z.tippsFehler) {
+    $("meine").replaceChildren(el("div", { class: "leer" }, "Deine Tipps konnten nicht geladen werden. Lade die Seite neu."));
+    return;
+  }
+  if (Z.nurLesen) {
+    $("meine").replaceChildren(el("div", { class: "leer" }, TEXT_NUR_LESEN));
+    return;
+  }
   if (!Z.speichernMoeglich) {
     $("meine").replaceChildren(el("div", { class: "leer" },
       "Melde dich mit deinem Claude-Konto an (oder bitte um Mitwirkenden-Zugriff), um gespielte Tipps zu speichern und automatisch auszuwerten."));
@@ -267,6 +288,8 @@ function renderMeine() {
       Z.loeschFrage === id ? "Wirklich löschen" : "Löschen");
     loeschen.addEventListener("click", () => loesche(id));
     const aktionen = el("div", { class: "aktionen" }, info, loeschen);
+    if (Z.loeschFehler.has(id)) aktionen.append(el("span", { class: "chip signal", role: "alert" },
+      "Löschen fehlgeschlagen – lade die Seite neu"));
     if (Z.loeschFrage === id) {
       const abbrechen = el("button", { class: "zweit", type: "button" }, "Abbrechen");
       abbrechen.addEventListener("click", () => { Z.loeschFrage = null; renderMeine(); });
@@ -277,15 +300,16 @@ function renderMeine() {
 }
 
 async function loesche(id) {
-  if (Z.loeschFrage !== id) { Z.loeschFrage = id; renderMeine(); return; }
+  if (Z.loeschFrage !== id) { Z.loeschFrage = id; Z.loeschFehler.delete(id); renderMeine(); return; }
   Z.loeschFrage = null;
-  try { await Z.db.collection("data/users/" + Z.uid).doc(id).delete(); }
-  catch (e) { renderMeine(); }
+  try { await Z.db.collection("data/users/" + Z.uid).doc(id).delete(); Z.loeschFehler.delete(id); }
+  catch (e) { Z.loeschFehler.add(id); renderMeine(); }
 }
 
 function renderBilanz() {
-  $("bereich-bilanz").hidden = !Z.speichernMoeglich;
-  if (!Z.speichernMoeglich) return;
+  const sichtbar = Z.speichernMoeglich && !Z.tippsFehler;
+  $("bereich-bilanz").hidden = !sichtbar;
+  if (!sichtbar) return;
   const ziehungen = ziehungNachDatum();
   const ausgewertet = Z.tipps
     .map(({ daten }) => { const z = ziehungen.get(daten.ziehungsdatum);
@@ -303,8 +327,13 @@ function renderBilanz() {
     el("td", {}, String(ausgewertet.filter((a) => a.richtige === k).length)),
     el("td", {}, fmtZahl(n * p[k], 2))));
   const gewinne = ausgewertet.filter((a) => a.klasse).length;
+  const pOhneSz = p[3] + p[4] + p[5] + p[6];
+  const erwGewinne = Z.tipps.reduce((summe, { daten }) => {
+    if (!ziehungen.get(daten.ziehungsdatum)) return summe;
+    return summe + (daten.superzahl == null ? pOhneSz : Lotto.gewinnWahrscheinlichkeit());
+  }, 0);
   zeilen.push(el("tr", {}, el("td", {}, el("b", {}, "Mit Gewinnklasse")),
-    el("td", {}, String(gewinne)), el("td", {}, fmtZahl(n * Lotto.gewinnWahrscheinlichkeit(), 2))));
+    el("td", {}, String(gewinne)), el("td", {}, fmtZahl(erwGewinne, 2))));
   $("bilanz").replaceChildren(
     el("p", { class: "leise" }, n + " ausgewertete Tipps. Rechts steht, wie viele bei reinem Zufall zu erwarten wären."),
     el("div", { class: "tabelle-huelle" }, el("table", {},
@@ -316,7 +345,8 @@ function renderBilanz() {
 function renderDiagramm() {
   const ziehungen = alleZiehungen();
   if (!ziehungen.length) {
-    $("diagramm").replaceChildren(el("div", { class: "leise" }, "Ziehungen werden geladen …"));
+    $("diagramm").replaceChildren(el("div", { class: "leise" },
+      Z.ziehungenStatus === "fehlt" ? "Diagramm nicht verfügbar" : "Ziehungen werden geladen …"));
     $("diagramm-text").textContent = "";
     return;
   }
@@ -376,6 +406,7 @@ function renderBacktest() {
 
 function renderStand() {
   if (!Z.standGeladen) return;
+  if (Z.standFehler) { $("stand").textContent = "Stand der Ziehungen konnte nicht geladen werden. Lade die Seite neu."; return; }
   const s = Z.stand;
   $("stand").textContent = s
     ? "Letzte Ziehung: " + fmtDatum(s.letzte_ziehung) + " · " + fmtZahl(s.anzahl) + " Ziehungen · aktualisiert " +
@@ -394,23 +425,38 @@ async function start() {
 
   const c = window.claude;
   const [db, user] = c ? await Promise.all([c.use("db"), c.use("user")]) : [null, null];
-  if (!db) { $("stand").textContent = "Ziehungsdaten sind in dieser Ansicht nicht verfügbar."; return; }
+  if (!db) {
+    Z.ziehungenStatus = "fehlt";
+    $("stand").textContent = "Ziehungsdaten sind in dieser Ansicht nicht verfügbar.";
+    renderDiagramm();
+    return;
+  }
   Z.db = db;
   Z.uid = user ? await user.id() : null;
-  Z.speichernMoeglich = Boolean(Z.uid);
+  const darf = Z.uid && user.can ? await user.can("data.write") : null;
+  Z.speichernMoeglich = Boolean(Z.uid) && darf !== false;
+  Z.nurLesen = Boolean(Z.uid) && darf === false;
+  renderMeine(); renderBilanz();
   renderVorschlaege();
 
   db.collection("ziehungen").onSnapshot((snap) => {
     Z.jahre = new Map(snap.docs.filter((d) => d.exists).map((d) => [d.id, d.data().ziehungen || []]));
-    if (!Z.geklickt) neueVorschlaege();
+    Z.ziehungenStatus = "da";
+    if (Z.ersteLieferung && !Z.geklickt && !Z.eingabeBeruehrt) neueVorschlaege();
+    Z.ersteLieferung = false;
     alles();
-  }, () => { $("stand").textContent = "Ziehungen konnten nicht geladen werden. Lade die Seite neu."; });
-  db.doc("meta/stand").onSnapshot((d) => { Z.standGeladen = true; Z.stand = d.exists ? d.data() : null; renderStand(); });
+  }, () => {
+    Z.ziehungenStatus = "fehlt";
+    $("stand").textContent = "Ziehungen konnten nicht geladen werden. Lade die Seite neu.";
+    renderDiagramm();
+  });
+  db.doc("meta/stand").onSnapshot((d) => { Z.standGeladen = true; Z.stand = d.exists ? d.data() : null; renderStand(); },
+    () => { Z.standGeladen = true; Z.standFehler = true; renderStand(); });
   if (Z.uid) {
     db.collection("data/users/" + Z.uid).onSnapshot((snap) => {
       Z.tipps = snap.docs.filter((d) => d.exists).map((d) => ({ id: d.id, daten: d.data() }));
       renderMeine(); renderBilanz();
-    }, () => { Z.speichernMoeglich = false; renderVorschlaege(); renderMeine(); renderBilanz(); });
+    }, () => { Z.tippsFehler = true; renderMeine(); renderBilanz(); });
   }
 }
 start();
