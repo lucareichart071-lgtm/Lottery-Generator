@@ -1,11 +1,17 @@
-"""Treten Muster-Strategien gegen den Zufall an? Walk-forward-Backtest."""
+"""Treten Muster-Strategien gegen den Zufall an? Backtest mit Signifikanztest.
+
+Das Modell wird einmal auf dem Trainingszeitraum trainiert; die Merkmale
+laufen im Testzeitraum weiter (jede Ziehung nutzt nur frühere Ziehungen).
+Der Signifikanztest ist ein Monte-Carlo-Test gegen die analytische
+(hypergeometrische) Nullverteilung zufälliger Tipps.
+"""
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 from datetime import date
 
 import numpy as np
-from scipy.stats import chisquare
+from scipy.stats import chi2, chisquare
 from sklearn.ensemble import HistGradientBoostingClassifier
 
 from lotto.daten import Ziehung
@@ -46,6 +52,30 @@ def _top6(werte: np.ndarray, rng: np.random.Generator) -> np.ndarray:
     return np.argsort(-(werte + rauschen))[:6] + 1
 
 
+def nullverteilung(
+    rng: np.random.Generator, n_permutationen: int, n_test: int
+) -> np.ndarray:
+    """Monte-Carlo-Stichprobe der Nullverteilung des mittleren Treffers.
+
+    Ein zufälliger Tipp (6 aus 49) trifft hypergeometrisch verteilt
+    (6 gezogene aus 43 nicht gezogenen); je Stichprobe wird über n_test
+    Ziehungen gemittelt.
+    """
+    return rng.hypergeometric(6, 43, 6, size=(n_permutationen, n_test)).mean(axis=1)
+
+
+def gleichverteilungstest(zaehlungen: np.ndarray) -> tuple[float, float]:
+    """Chi-Quadrat-Test auf Gleichverteilung der 49 Zahlen.
+
+    Lotto zieht 6 aus 49 ohne Zurücklegen; der Standard-Chi-Quadrat-Wert hat
+    dann den Erwartungswert (N-n)/(N-1) * 48 = 43 statt 48. Korrektur:
+    Statistik mit (N-1)/(N-n) = 48/43 multiplizieren, p-Wert aus chi2 mit
+    48 Freiheitsgraden.
+    """
+    statistik = float(chisquare(zaehlungen).statistic) * 48 / 43
+    return statistik, float(chi2.sf(statistik, 48))
+
+
 def backtest(
     ziehungen: list[Ziehung],
     test_ab: date,
@@ -81,8 +111,8 @@ def backtest(
         for name, tipp in tipps.items():
             treffer[name][t] = gezogen[tipp - 1].sum()
 
-    # Nullverteilung: Treffer zufälliger Tipps sind hypergeometrisch verteilt.
-    null = rng.hypergeometric(6, 43, 6, size=(n_permutationen, n_test)).mean(axis=1)
+    # Monte-Carlo-Test gegen die hypergeometrische Nullverteilung.
+    null = nullverteilung(rng, n_permutationen, n_test)
     ergebnisse = []
     for name in STRATEGIEN:
         mittel = float(treffer[name].mean())
@@ -97,7 +127,7 @@ def backtest(
             )
         )
 
-    chi = chisquare(x.sum(axis=0))
+    chi2_stat, chi2_p = gleichverteilungstest(x.sum(axis=0))
     return Ergebnis(
         n_ziehungen_gesamt=len(zahlen),
         n_training=split - AUFWAERMEN,
@@ -105,6 +135,6 @@ def backtest(
         test_ab=ziehungen[split].datum.isoformat(),
         erwartet_mittel=ERWARTET,
         strategien=ergebnisse,
-        chi2_statistik=float(chi.statistic),
-        chi2_p_wert=float(chi.pvalue),
+        chi2_statistik=chi2_stat,
+        chi2_p_wert=chi2_p,
     )
