@@ -3,16 +3,16 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: Ziehungsabend. Linksbündige Spalte auf nachtblauer Studiofläche mit Spotlight oben links:
+/* Layout: Ziehungsabend. Linksbündige Spalte auf warmer Anthrazit-Studiofläche mit Spotlight oben links:
    Bühne mit der letzten Ziehung (Kugeln auf der Rinne) -> Tippscheine aus Papier im Raster ->
    Meine Tipps -> Bilanz -> Analyse (Häufigkeit volle Breite, darunter Superzahl | Backtest). */
 :root {
   color-scheme: dark;
-  --nacht: #0a0d29;      /* Studiohintergrund */
-  --studio: #141945;     /* abgesetzte Flächen (gespeicherte Tipps) */
-  --rand: #2b3274;       /* Linien, Raster */
+  --nacht: #151311;      /* Studiohintergrund */
+  --studio: #201d1a;     /* abgesetzte Flächen (gespeicherte Tipps) */
+  --rand: #3b352e;       /* Linien, Raster */
   --elfenbein: #f3ecd8;  /* Text und Kugeln */
-  --leise: #aab0d8;      /* Nebentext */
+  --leise: #b9ae9d;      /* Nebentext */
   --gold: #f2b950;       /* Akzent: Erwartungswert, Fokus */
   --rot: #e8414d;        /* Superzahl, Warnung */
   --rot-hell: #ffb3b8;
@@ -31,7 +31,7 @@ body {
   margin: 0; color: var(--elfenbein); font: 400 1rem/1.55 var(--font-text);
   background-color: var(--nacht);
   background-image:
-    radial-gradient(ellipse 760px 520px at 18% -120px, rgba(92, 108, 255, 0.30), rgba(92, 108, 255, 0) 70%),
+    radial-gradient(ellipse 760px 520px at 18% -120px, rgba(255, 220, 160, 0.10), rgba(255, 220, 160, 0) 70%),
     radial-gradient(ellipse 420px 260px at 26% 260px, rgba(242, 185, 80, 0.07), rgba(242, 185, 80, 0) 70%);
   background-repeat: no-repeat;
 }
@@ -81,7 +81,7 @@ section > * { min-width: 0; }
 .rinne { --d: clamp(32px, 9.5vw, 76px); position: relative; display: flex; align-items: flex-end;
   gap: clamp(6px, 1.4vw, 14px); padding: 22px clamp(6px, 1.4vw, 14px) 12px; max-width: 100%; }
 .rinne::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 7px; border-radius: 4px;
-  background: linear-gradient(180deg, #2a3278, #0f1336); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1); }
+  background: linear-gradient(180deg, #3b352e, #171512); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1); }
 /* Die Gruppe ist genau eine Kugel breit; das Etikett sitzt absolut darüber und zählt nicht zur Zeilenbreite. */
 .sz-gruppe { position: relative; flex: none; width: var(--d); margin-left: clamp(4px, 2vw, 22px); }
 .sz-gruppe small { position: absolute; left: 50%; bottom: 100%; transform: translateX(-50%); margin-bottom: 6px;
