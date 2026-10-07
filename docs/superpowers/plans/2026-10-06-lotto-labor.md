@@ -1148,7 +1148,7 @@ test("Häufigkeiten und Ziehungstage", () => {
 
 - [ ] **Step 2: Fehlschlag prüfen**
 
-Run: `node --test web/`
+Run: `node --test web/logik.test.js`
 Expected: FAIL mit `Cannot find module './logik.js'`
 
 - [ ] **Step 3: Implementierung** – `web/logik.js`:
@@ -1261,7 +1261,7 @@ Expected: FAIL mit `Cannot find module './logik.js'`
 
 - [ ] **Step 4: Tests laufen lassen**
 
-Run: `node --test web/`
+Run: `node --test web/logik.test.js`
 Expected: 6 Tests, alle pass
 
 - [ ] **Step 5: Commit**
@@ -1835,6 +1835,6 @@ git commit -m "chore: Prompt für die automatische Datenaktualisierung"
 
 ### Task 10: Abschlussprüfung
 
-- [ ] **Step 1:** `python -m pytest -q && node --test web/` → alles grün.
+- [ ] **Step 1:** `python -m pytest -q && node --test web/logik.test.js` → alles grün.
 - [ ] **Step 2:** Skill `superpowers:verification-before-completion` anwenden: Backtest-Zahlen aus `ergebnisse.json` gegen die in der Web-App angezeigten prüfen (eine Artifact-`read`).
 - [ ] **Step 3:** Nutzer bekommt: Link-Karte der Web-App, die Backtest-Tabelle (echte Zahlen), 5 smarte Tipps, Hinweis zum Teilen (Mitwirkende brauchen die Stufe „Contributor“, um Tipps zu speichern), und das Python-Projekt als Datei.
